@@ -20,14 +20,26 @@ COPY requirements.txt .
 RUN grep -viE '^torch' requirements.txt > /tmp/requirements.docker.txt \
     && pip install --no-cache-dir -r /tmp/requirements.docker.txt
 
+# Deps oficiales de YOLOv5 v7.0 (pandas, IPython, etc.) sin tocar torch
+RUN git clone --depth 1 --branch v7.0 https://github.com/ultralytics/yolov5.git /tmp/yolov5 \
+    && grep -viE '^(torch|torchvision|#)' /tmp/yolov5/requirements.txt \
+       | sed '/^$/d' > /tmp/yolov5-req.txt \
+    && pip install --no-cache-dir -r /tmp/yolov5-req.txt \
+    && rm -rf /tmp/yolov5
+
 COPY . .
 
 # Pesos: no van en Git; se bajan en el build
 RUN chmod +x scripts/download_models.sh && ./scripts/download_models.sh
 
-# Precargar repo YOLOv5 v7.0 en torch.hub (master exige paquete ultralytics)
+# Cache del repo hub (sin cargar el modelo en build: evita fallos frágiles)
 ENV TORCH_HOME=/app/.torch
-RUN python -c "import torch; torch.hub.load('ultralytics/yolov5:v7.0', 'custom', path='yolov5s.pt', trust_repo=True); print('yolov5 hub ok')"
+RUN mkdir -p /app/.torch/hub \
+    && wget -q -O /tmp/yolov5-v7.0.zip https://github.com/ultralytics/yolov5/archive/refs/tags/v7.0.zip \
+    && python -c "import zipfile; zipfile.ZipFile('/tmp/yolov5-v7.0.zip').extractall('/app/.torch/hub')" \
+    && mv /app/.torch/hub/yolov5-7.0 /app/.torch/hub/ultralytics_yolov5_v7.0 \
+    && rm -f /tmp/yolov5-v7.0.zip \
+    && echo "yolov5 hub cache ok"
 
 ENV HOST=0.0.0.0
 ENV PORT=8000
