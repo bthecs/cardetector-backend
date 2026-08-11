@@ -22,12 +22,13 @@ RUN grep -viE '^(torch|torchvision)' requirements.txt > /tmp/requirements.docker
     && pip uninstall -y jax jaxlib || true
 
 # 3) Re-pin final (evita que algún transitive upgrade rompa ufuncs)
+# No importar tensorflow acá: en el build de Railway falla random_device/urandom.
 RUN pip install --no-cache-dir --force-reinstall --no-deps \
         "numpy==1.23.5" \
         "scipy==1.10.1" \
         "pandas==1.5.3" \
         "ml_dtypes==0.2.0" \
-    && python -c "import numpy, scipy, tensorflow as tf, torch, torchvision; print('OK', numpy.__version__, scipy.__version__, tf.__version__, torch.__version__)"
+    && python -c "import numpy, scipy, torch, torchvision; print('OK', numpy.__version__, scipy.__version__, torch.__version__, torchvision.__version__)"
 
 COPY . .
 
