@@ -25,9 +25,9 @@ COPY . .
 # Pesos: no van en Git; se bajan en el build
 RUN chmod +x scripts/download_models.sh && ./scripts/download_models.sh
 
-# Precargar repo YOLOv5 en torch.hub (evita clone en el primer request)
+# Precargar repo YOLOv5 v7.0 en torch.hub (master exige paquete ultralytics)
 ENV TORCH_HOME=/app/.torch
-RUN python -c "import torch; torch.hub.load('ultralytics/yolov5', 'custom', path='yolov5s.pt', trust_repo=True); print('yolov5 hub ok')"
+RUN python -c "import torch; torch.hub.load('ultralytics/yolov5:v7.0', 'custom', path='yolov5s.pt', trust_repo=True); print('yolov5 hub ok')"
 
 ENV HOST=0.0.0.0
 ENV PORT=8000

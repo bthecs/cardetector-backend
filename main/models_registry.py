@@ -24,18 +24,20 @@ _state: dict[str, Any] = {
 def _load_yolo(config) -> Any:
     import torch
 
+    # Pin a v7.0: master de yolov5 ahora importa `ultralytics` y rompe el deploy.
+    hub_repo = "ultralytics/yolov5:v7.0"
     weights = Path(config.YOLO_WEIGHTS)
     try:
         if weights.is_file():
             model = torch.hub.load(
-                "ultralytics/yolov5",
+                hub_repo,
                 "custom",
                 path=str(weights),
                 trust_repo=True,
             )
         else:
             model = torch.hub.load(
-                "ultralytics/yolov5",
+                hub_repo,
                 config.YOLO_MODEL,
                 pretrained=True,
                 trust_repo=True,
