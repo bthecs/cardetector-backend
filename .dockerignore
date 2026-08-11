@@ -1,0 +1,36 @@
+# Build context — mantener la imagen chica para Railway trial
+.env
+.env.*
+!.env.example
+env/
+.venv/
+**/__pycache__/
+**/*.pyc
+.pytest_cache/
+.git/
+.gitignore
+.vscode/
+
+# Datos / experimentos locales (no van al deploy)
+experiments/
+docs/
+_thesis_extract/
+runs/
+main/services/videos/
+main/logs/
+*.mp4
+*.avi
+*.mkv
+*.zip
+plate_dataset.zip
+
+# Pesos locales: se descargan en el build
+*.pt
+*.h5
+*.weights
+main/services/custom-anchors/
+third_party/
+
+# Tests no necesarios en runtime
+tests/
+pytest.ini
