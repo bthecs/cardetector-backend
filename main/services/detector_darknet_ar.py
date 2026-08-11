@@ -6,12 +6,11 @@ No requiere reentrenar ni el RAR de imágenes.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 
 import cv2
 import numpy as np
 
-from .ocr import DetectOCR
 from .plate_enhance import PlateVoteTracker, expand_bbox
 
 
@@ -24,7 +23,7 @@ class DarknetARPlateDetector:
         nms: float = 0.45,
         day_threshold: float = 0.50,
         night_threshold: float = 0.35,
-        ocr: Optional[DetectOCR] = None,
+        ocr: Optional[Any] = None,
         roi_pad_ratio: float = 0.12,
         ocr_min_confidence: float = 0.35,
         input_size: int = 608,
