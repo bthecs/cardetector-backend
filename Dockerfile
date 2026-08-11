@@ -10,40 +10,37 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Torch + torchvision CPU (misma familia 2.0 / 0.15)
+# 1) Torch CPU
 RUN pip install --no-cache-dir \
     "torch==2.0.1+cpu" "torchvision==0.15.2+cpu" \
     --index-url https://download.pytorch.org/whl/cpu
 
+# 2) Resto del stack (versiones pinneadas en requirements.txt)
 COPY requirements.txt .
 RUN grep -viE '^(torch|torchvision)' requirements.txt > /tmp/requirements.docker.txt \
-    && pip install --no-cache-dir -r /tmp/requirements.docker.txt
+    && pip install --no-cache-dir -r /tmp/requirements.docker.txt \
+    && pip uninstall -y jax jaxlib || true
 
-# Deps YOLOv5 v7.0 sin numpy/torch (evita romper TF)
-RUN git clone --depth 1 --branch v7.0 https://github.com/ultralytics/yolov5.git /tmp/yolov5 \
-    && grep -viE '^(torch|torchvision|numpy|#)' /tmp/yolov5/requirements.txt \
-       | sed '/^$/d' > /tmp/yolov5-req.txt \
-    && pip install --no-cache-dir -r /tmp/yolov5-req.txt \
-    && rm -rf /tmp/yolov5
-
-# Estabilizar stack TF: sin jax, numpy/ml_dtypes compatibles con TF 2.12
-RUN pip uninstall -y jax jaxlib || true \
-    && pip install --no-cache-dir --force-reinstall \
+# 3) Re-pin final (evita que algún transitive upgrade rompa ufuncs)
+RUN pip install --no-cache-dir --force-reinstall --no-deps \
         "numpy==1.23.5" \
+        "scipy==1.10.1" \
+        "pandas==1.5.3" \
         "ml_dtypes==0.2.0" \
-        "tensorflow==2.12.0"
+    && python -c "import numpy, scipy, tensorflow as tf, torch, torchvision; print('OK', numpy.__version__, scipy.__version__, tf.__version__, torch.__version__)"
 
 COPY . .
 
 RUN chmod +x scripts/download_models.sh && ./scripts/download_models.sh
 
+# Cache hub YOLOv5 v7.0
 ENV TORCH_HOME=/app/.torch
 RUN mkdir -p /app/.torch/hub \
     && wget -q -O /tmp/yolov5-v7.0.zip https://github.com/ultralytics/yolov5/archive/refs/tags/v7.0.zip \
     && python -c "import zipfile; zipfile.ZipFile('/tmp/yolov5-v7.0.zip').extractall('/app/.torch/hub')" \
     && mv /app/.torch/hub/yolov5-7.0 /app/.torch/hub/ultralytics_yolov5_v7.0 \
     && rm -f /tmp/yolov5-v7.0.zip \
-    && python -c "import numpy, torch, torchvision, tensorflow as tf; print(numpy.__version__, torch.__version__, torchvision.__version__, tf.__version__)"
+    && echo "yolov5 hub cache ok"
 
 ENV HOST=0.0.0.0
 ENV PORT=8000
