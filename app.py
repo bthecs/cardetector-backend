@@ -1,8 +1,7 @@
-import os
 from main import create_app
+from main.config import Config
 
 app = create_app()
-app.app_context().push()
 
-if __name__ == '__main__':
-	app.run(debug=True, port=8000)
+if __name__ == "__main__":
+    app.run(host=Config.HOST, port=Config.PORT, debug=Config.DEBUG)

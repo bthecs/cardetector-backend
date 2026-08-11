@@ -1,0 +1,12 @@
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+healthcheckPath = "/detector/health"
+healthcheckTimeout = 300
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 5
+
+# Demo tesis: mejor un poco más de RAM (torch + TF)
+# En el dashboard de Railway: Settings → Resources → ~2 GB si el trial lo permite

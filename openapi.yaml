@@ -1,0 +1,121 @@
+openapi: 3.0.3
+info:
+  title: Car Detector API
+  description: |
+    Backend de tesis — censo de vehículos (YOLOv5) y detección/OCR de matrículas
+    (TensorFlow SavedModel + CNN Keras).
+  version: 1.1.0
+servers:
+  - url: http://127.0.0.1:8000
+paths:
+  /detector/health:
+    get:
+      summary: Healthcheck y estado de modelos
+      responses:
+        "200":
+          description: Servicio saludable o degradado con modelos parciales
+        "503":
+          description: Ningún modelo cargado
+  /detector/:
+    post:
+      summary: Censo de vehículos en un video
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [video]
+              properties:
+                video:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: Conteo total y por clase
+        "400":
+          description: Validación fallida
+        "401":
+          description: API key inválida
+  /detector/matricula:
+    post:
+      summary: Detección y OCR de matrículas
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [video, day_night]
+              properties:
+                video:
+                  type: string
+                  format: binary
+                day_night:
+                  type: string
+                  enum: [day, night]
+                plate:
+                  type: string
+                  description: Filtro opcional de patente
+      responses:
+        "200":
+          description: Lista deduplicada de placas con timestamp
+  /detector/artifacts/{artifact_id}:
+    get:
+      summary: Descarga video anotado (tracking / placas)
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: artifact_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: video/mp4 anotado
+        "404":
+          description: Artefacto inexistente o expirado
+
+    post:
+      summary: Encola censo asíncrono
+      security:
+        - ApiKeyAuth: []
+      responses:
+        "202":
+          description: Job creado
+  /detector/jobs/matricula:
+    post:
+      summary: Encola detección de matrículas asíncrona
+      security:
+        - ApiKeyAuth: []
+      responses:
+        "202":
+          description: Job creado
+  /detector/jobs/{job_id}:
+    get:
+      summary: Estado / resultado de un job
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Estado del job
+        "404":
+          description: Job inexistente
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: Requerido solo si AUTH_ENABLED=true

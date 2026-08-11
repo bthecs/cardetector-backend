@@ -1,0 +1,15 @@
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      # Montar pesos locales (no van en la imagen por tamaño)
+      - ./yolov5s.pt:/app/yolov5s.pt:ro
+      - ./main/services/custom-anchors:/app/main/services/custom-anchors:ro
+      - ./main/services/model.h5:/app/main/services/model.h5:ro
+    environment:
+      SHOW_PREVIEW: "false"
+      SKIP_MODEL_LOAD: "false"
