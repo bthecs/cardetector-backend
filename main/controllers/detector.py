@@ -76,8 +76,9 @@ def _progress_cb(job_id: str):
 @detector.route("/health", methods=["GET"])
 def health():
     ms = models_status()
-    if ms.get("loading"):
-        return jsonify({"status": "loading", "models": ms}), 200
+    # Mientras carga: 503 para que Railway espere modelos reales (no "Online" falso).
+    if ms.get("loading") or not ms.get("ready"):
+        return jsonify({"status": "loading", "models": ms}), 503
     healthy = ms["yolo_loaded"] or ms["plate_detector_loaded"]
     return jsonify({"status": "ok" if healthy else "degraded", "models": ms}), (
         200 if healthy else 503
